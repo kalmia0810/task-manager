@@ -1,14 +1,12 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>業務タスク管理</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #0f172a; }
@@ -18,8 +16,6 @@
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useEffect, useCallback } = React;
-
 // ============================================================
 // 定数・マスターデータ
 // ============================================================
@@ -97,12 +93,8 @@ function getDateTasks(date) {
 // ストレージ
 // ============================================================
 const STORAGE_KEY = "taskman_v2";
-async function loadStateAsync() {
-  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
-}
-async function saveStateAsync(st) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch {}
-}
+function loadState() { try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; } catch { return null; } }
+function saveState(st) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch {} }
 
 function createInitialState() {
   return {
@@ -305,21 +297,8 @@ function App() {
   const [exportText, setExportText] = useState("");
   const [importText, setImportText] = useState("");
 
-  // 起動時にストレージからロード
-  useEffect(() => {
-    loadStateAsync().then(saved => {
-      if (saved && !saved.shiftPlans) setState({ ...saved, shiftPlans: {} });
-      else setState(saved || createInitialState());
-      setLoaded(true);
-    });
-    const t = setInterval(() => setToday(new Date()), 60000);
-    return () => clearInterval(t);
-  }, []);
-
-  // stateが変わるたびに保存
-  useEffect(() => {
-    if (loaded && state) saveStateAsync(state);
-  }, [state, loaded]);
+  useEffect(()=>{const t=setInterval(()=>setToday(new Date()),60000);return()=>clearInterval(t);},[]);
+  useEffect(()=>{saveState(state);},[state]);
 
   const dateKey = getDateKey(viewDate);
 
@@ -365,6 +344,13 @@ function App() {
   const toggleCheck = (id) => { const c = log.checkedTasks || []; updateDayLog(dateKey, { checkedTasks: c.includes(id) ? c.filter(x => x !== id) : [...c, id] }); };
   const addCustom = (text) => { if (!text.trim()) return; updateDayLog(dateKey, { customTasks: [...(log.customTasks || []), { id: `custom_${Date.now()}`, text: text.trim() }] }); };
   const removeCustom = (id) => updateDayLog(dateKey, { customTasks: (log.customTasks || []).filter(t => t.id !== id) });
+  const carryOver = (task) => {
+    const nextDate = new Date(viewDate); nextDate.setDate(nextDate.getDate() + 1);
+    const nextKey = getDateKey(nextDate); const nextLog = getDayLog(nextKey);
+    const already = (nextLog.customTasks || []).some(t => t.text === `【繰越】${task.text}` || t.text === task.text);
+    if (already) return;
+    updateDayLog(nextKey, { customTasks: [...(nextLog.customTasks || []), { id: `custom_${Date.now()}`, text: `【繰越】${task.text}` }] });
+  };
 
   const handleExport = () => {
     const json = JSON.stringify(state, null, 2);
@@ -393,12 +379,6 @@ function App() {
   const catColors = { fixed: "#3b82f6", date: "#8b5cf6", flyer: "#f59e0b", variable: "#ef4444", custom: "#10b981" };
   const catLabels = { fixed: "定期", date: "日付", flyer: "チラシ", variable: "変動", custom: "追加" };
   const isToday = getDateKey(viewDate) === getDateKey(today);
-
-  if (!loaded || !state) return (
-    <div style={{ background: "#0f172a", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#38bdf8", fontSize: 16, fontFamily: "sans-serif" }}>
-      読み込み中...
-    </div>
-  );
 
   return (
     <div style={S.root}>
@@ -535,6 +515,7 @@ function App() {
                               {checked && <span style={{color:"#fff",fontSize:12}}>✓</span>}
                             </div>
                             <span style={{...S.taskText, textDecoration: checked?"line-through":"none", color: checked?"#64748b":"#e2e8f0"}}>{task.text}</span>
+                            {cat === "custom" && !checked && <button style={S.carryOverBtn} onClick={e=>{e.stopPropagation();carryOver(task);}}>翌日→</button>}
                             {cat === "custom" && <button style={S.removeBtn} onClick={e=>{e.stopPropagation();removeCustom(task.id);}}>✕</button>}
                           </div>
                         );
@@ -709,6 +690,7 @@ const S = {
   taskCheck: { width: 20, height: 20, borderRadius: 6, border: "2px solid", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
   taskText: { fontSize: 13, flex: 1, lineHeight: 1.4 },
   removeBtn: { background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 14, padding: "0 4px" },
+  carryOverBtn: { background: "none", border: "1px solid #334155", color: "#60a5fa", cursor: "pointer", fontSize: 10, padding: "2px 6px", borderRadius: 5, whiteSpace: "nowrap", flexShrink: 0 },
   flyerRemind: { background: "#1c1408", border: "1px solid #92400e", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "#fcd34d", marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 },
   prepDoneBtn: { background: "#065f46", border: "none", color: "#6ee7b7", fontSize: 11, padding: "4px 8px", borderRadius: 6, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 },
   flyerCountdown: { display: "flex", alignItems: "center", gap: 10, background: "#0f2744", border: "1px solid #1e40af", borderRadius: 10, padding: "10px 14px", marginBottom: 8 },
@@ -751,9 +733,7 @@ const S = {
   saveMsg: { background: "#064e3b", border: "1px solid #10b981", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#6ee7b7", marginBottom: 10, textAlign: "center" },
 };
 
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(React.createElement(App));
+    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   </script>
 </body>
 </html>
