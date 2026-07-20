@@ -1,744 +1,870 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>業務タスク管理</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0f172a; }
-    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>業務タスク管理</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0f172a;font-family:'Noto Sans JP',sans-serif;color:#e2e8f0;max-width:480px;margin:0 auto;padding-bottom:40px;}
+button{cursor:pointer;font-family:inherit;}
+input,textarea{font-family:inherit;}
+input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);}
+
+/* ヘッダー */
+#header{background:linear-gradient(135deg,#1e293b,#0f172a);padding:16px 16px 0;border-bottom:1px solid #1e293b;}
+#header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+#header-title{font-size:20px;font-weight:700;color:#f1f5f9;letter-spacing:2px;}
+#header-sub{font-size:12px;color:#64748b;margin-top:2px;}
+#date-nav{display:flex;align-items:center;justify-content:space-between;padding:8px 0 12px;}
+.nav-btn{background:none;border:1px solid #334155;color:#94a3b8;font-size:22px;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+#view-date-label{font-size:16px;font-weight:700;text-align:center;}
+#task-count{font-size:11px;color:#64748b;margin-top:2px;text-align:center;}
+.today-badge{background:#38bdf8;color:#0f172a;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:6px;}
+.dayoff-badge{background:#374151;color:#9ca3af;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:6px;}
+
+/* タブ */
+#tab-bar{display:flex;background:#1e293b;border-bottom:1px solid #334155;overflow-x:auto;}
+.tab-btn{flex:1;padding:10px 2px;background:none;border:none;color:#64748b;font-size:10px;white-space:nowrap;font-weight:500;border-bottom:2px solid transparent;}
+.tab-btn.active{color:#38bdf8;border-bottom:2px solid #38bdf8;}
+
+/* ボディ */
+#body{padding:12px;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* カード */
+.card{background:#1e293b;border-radius:12px;padding:14px;margin-bottom:12px;border:1px solid #334155;}
+.card-title{font-size:13px;font-weight:700;color:#94a3b8;margin-bottom:10px;letter-spacing:1px;}
+
+/* バナー */
+.dayoff-banner{background:#1a1a2e;border:1px solid #374151;border-radius:8px;padding:10px 14px;font-size:12px;color:#9ca3af;margin-bottom:10px;text-align:center;}
+
+/* シフト */
+.shift-row{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.shift-label{display:flex;align-items:center;gap:8px;}
+.staff-badge{font-size:12px;padding:2px 8px;border-radius:6px;color:#e2e8f0;font-weight:600;}
+.present{font-size:11px;color:#10b981;}
+.absent{font-size:11px;color:#ef4444;}
+.cashier-row{display:flex;align-items:center;gap:8px;}
+.cashier-label{font-size:12px;color:#94a3b8;white-space:nowrap;}
+.cashier-btns{display:flex;gap:4px;flex-wrap:wrap;}
+.cashier-btn{background:#334155;border:none;color:#94a3b8;font-size:12px;padding:4px 10px;border-radius:6px;}
+.cashier-btn.active{background:#0369a1;color:#fff;font-weight:700;}
+.sync-btn{background:none;border:1px solid #334155;color:#60a5fa;font-size:10px;padding:4px 8px;border-radius:6px;}
+
+/* チラシリマインド */
+.flyer-remind{background:#1c1408;border:1px solid #92400e;border-radius:8px;padding:10px 12px;font-size:12px;color:#fcd34d;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.prep-done-btn{background:#065f46;border:none;color:#6ee7b7;font-size:11px;padding:4px 8px;border-radius:6px;white-space:nowrap;flex-shrink:0;}
+.flyer-countdown{display:flex;align-items:center;gap:10px;background:#0f2744;border:1px solid #1e40af;border-radius:10px;padding:10px 14px;margin-bottom:8px;}
+.flyer-cd-icon{font-size:20px;flex-shrink:0;}
+.flyer-cd-body{flex:1;min-width:0;}
+.flyer-cd-label{font-size:10px;color:#60a5fa;font-weight:700;letter-spacing:1px;margin-bottom:1px;}
+.flyer-cd-name{font-size:13px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.flyer-cd-date{font-size:11px;color:#64748b;margin-top:1px;}
+.flyer-cd-days{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+.flyer-cd-num{font-size:28px;font-weight:800;color:#38bdf8;line-height:1;}
+.flyer-cd-unit{font-size:10px;color:#60a5fa;margin-top:1px;}
+
+/* タスク */
+.section{margin-bottom:8px;}
+.section-label{font-size:11px;font-weight:700;margin-bottom:4px;padding-left:4px;letter-spacing:1px;}
+.task-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#1e293b;border-radius:8px;margin-bottom:4px;border:1px solid #334155;cursor:pointer;user-select:none;}
+.task-row.checked{background:#0f172a;border-color:#1e293b;}
+.task-check{width:20px;height:20px;border-radius:6px;border:2px solid;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;}
+.task-text{font-size:13px;flex:1;line-height:1.4;}
+.task-row.checked .task-text{text-decoration:line-through;color:#64748b;}
+.remove-btn{background:none;border:none;color:#475569;font-size:14px;padding:0 4px;}
+.carryover-btn{background:none;border:1px solid #334155;color:#60a5fa;font-size:10px;padding:2px 6px;border-radius:5px;white-space:nowrap;flex-shrink:0;}
+.empty-msg{text-align:center;color:#475569;font-size:13px;padding:24px;}
+
+/* 入力 */
+.add-row{display:flex;gap:8px;}
+input[type="text"],.text-input{flex:1;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:8px 10px;font-size:13px;outline:none;}
+input[type="date"]{background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:8px 10px;font-size:13px;outline:none;width:100%;}
+textarea{background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:8px 10px;font-size:13px;outline:none;resize:none;width:100%;}
+.add-btn{background:#1d4ed8;border:none;color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;white-space:nowrap;}
+.add-form{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding:10px;background:#0f172a;border-radius:8px;}
+.date-input-row{display:flex;gap:8px;}
+.date-input-row>div{flex:1;}
+.input-label{font-size:11px;color:#64748b;margin-bottom:3px;}
+
+/* チラシカード */
+.flyer-card{background:#1e293b;border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid #1e293b;}
+.flyer-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.flyer-name{font-weight:700;font-size:14px;color:#e2e8f0;}
+.flyer-date-text{font-size:11px;color:#64748b;margin-top:2px;}
+.flyer-badges{display:flex;gap:6px;align-items:center;}
+.active-badge{background:#0c4a6e;color:#38bdf8;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;}
+.past-badge{background:#1e293b;color:#475569;font-size:10px;padding:2px 6px;border-radius:4px;}
+.prep-row{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #334155;padding-top:8px;margin-top:4px;}
+
+/* シフトタブ */
+.period-btn{background:#0f172a;border:1px solid #334155;color:#94a3b8;padding:10px 12px;border-radius:8px;font-size:12px;text-align:left;width:100%;margin-bottom:6px;}
+.period-btn.active{border-color:#38bdf8;color:#e2e8f0;background:#0c2240;}
+.current-badge{background:#0c4a6e;color:#38bdf8;font-size:9px;padding:1px 5px;border-radius:4px;margin-left:8px;font-weight:700;}
+.shift-table-header{display:flex;gap:4px;margin-bottom:6px;font-size:10px;color:#475569;padding-left:2px;}
+.shift-table-row{display:flex;align-items:center;gap:4px;padding:5px 4px;border-radius:6px;margin-bottom:2px;}
+.shift-toggle{border:none;border-radius:5px;padding:3px 0;font-weight:600;font-size:10px;width:100%;text-align:center;}
+.mini-btn{background:#334155;border:none;color:#94a3b8;font-size:11px;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;}
+.mini-btn.active{background:#0369a1;color:#fff;font-weight:700;}
+.small-btn{background:#1e40af;border:none;color:#bfdbfe;font-size:11px;padding:6px 10px;border-radius:6px;}
+.save-msg{background:#064e3b;border:1px solid #10b981;border-radius:8px;padding:8px 12px;font-size:12px;color:#6ee7b7;margin-bottom:10px;text-align:center;}
+.info-card{background:#0f2744;border:1px solid #1e40af;border-radius:12px;padding:14px;margin-bottom:12px;font-size:12px;color:#60a5fa;}
+
+/* 設定タブ */
+.week-section{margin-bottom:12px;}
+.week-label{font-size:12px;font-weight:700;color:#38bdf8;margin-bottom:4px;}
+.ref-task{font-size:12px;color:#94a3b8;padding:2px 0;}
+
+/* バックアップ */
+.help-text{font-size:12px;color:#64748b;margin-bottom:10px;}
+.backup-msg{margin-top:10px;text-align:center;color:#10b981;font-size:13px;font-weight:700;}
+.reset-btn{background:#7f1d1d;border:1px solid #ef4444;color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;width:100%;}
+
+/* プログレス */
+#progress-svg{flex-shrink:0;}
+</style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useEffect, useCallback } = React;
 
-// ============================================================
-// 定数・マスターデータ
-// ============================================================
-const WEEKDAY_NAMES = ["日", "月", "火", "水", "木", "金", "土"];
+<div id="header">
+  <div id="header-top">
+    <div>
+      <div id="header-title">業務タスク</div>
+      <div id="header-sub"></div>
+    </div>
+    <svg id="progress-svg" width="56" height="56" viewBox="0 0 56 56">
+      <circle cx="28" cy="28" r="22" fill="none" stroke="#1e293b" stroke-width="5"/>
+      <circle id="progress-circle" cx="28" cy="28" r="22" fill="none" stroke="#38bdf8" stroke-width="5"
+        stroke-dasharray="138.2" stroke-dashoffset="138.2"
+        stroke-linecap="round" transform="rotate(-90 28 28)" style="transition:stroke-dashoffset 0.4s"/>
+      <text id="progress-text" x="28" y="33" text-anchor="middle" fill="#e2e8f0" font-size="13" font-weight="700">0%</text>
+    </svg>
+  </div>
+  <div id="date-nav">
+    <button class="nav-btn" id="prev-btn">‹</button>
+    <div>
+      <div id="view-date-label"></div>
+      <div id="task-count"></div>
+    </div>
+    <button class="nav-btn" id="next-btn">›</button>
+  </div>
+</div>
 
-const FIXED_WEEKLY_TASKS = {
-  0: [
-    { id: "sun_order", text: "一般食品・米・雑貨 発注" },
-    { id: "sun_pet", text: "ペットボトル回収" },
-    { id: "sun_sale_prep", text: "菓子・雑貨カテゴリ割引 準備" },
-  ],
-  1: [
-    { id: "mon_order", text: "菓子・酒 発注" },
-    { id: "mon_sale_remove", text: "菓子・雑貨カテゴリ割引 撤去" },
-    { id: "mon_uniform", text: "均一祭 準備" },
-    { id: "mon_impro", text: "インプロPOP 付け" },
-    { id: "mon_point", text: "ポイント3倍・チャージ特典POP 準備" },
-  ],
-  2: [
-    { id: "tue_order", text: "一般食品・米 発注" },
-    { id: "tue_food_sale_prep", text: "一般食品カテゴリ割引 準備" },
-    { id: "tue_uniform_remove", text: "均一祭 撤去" },
-    { id: "tue_impro_remove", text: "インプロPOP 撤去" },
-    { id: "tue_point_remove", text: "ポイント3倍・チャージ特典POP 撤去" },
-  ],
-  3: [
-    { id: "wed_order", text: "菓子・酒・雑貨 発注" },
-    { id: "wed_food_sale_remove", text: "一般食品カテゴリ割引 撤去" },
-  ],
-  4: [
-    { id: "thu_order", text: "一般食品・米 発注" },
-  ],
-  5: [
-    { id: "fri_order", text: "菓子・酒 発注" },
-    { id: "fri_sat_prep", text: "土曜市 準備" },
-    { id: "fri_charge", text: "チャージ特典POP 準備" },
-  ],
-  6: [
-    { id: "sat_order", text: "一般食品 発注" },
-    { id: "sat_sat_remove", text: "土曜市 撤去" },
-    { id: "sat_charge_remove", text: "チャージ特典POP 撤去" },
-  ],
+<div id="tab-bar">
+  <button class="tab-btn active" data-tab="today">📋 タスク</button>
+  <button class="tab-btn" data-tab="shift">👤 シフト</button>
+  <button class="tab-btn" data-tab="flyer">📄 チラシ</button>
+  <button class="tab-btn" data-tab="settings">⚙️ 設定</button>
+  <button class="tab-btn" data-tab="backup">💾 BK</button>
+</div>
+
+<div id="body">
+  <div class="tab-panel active" id="panel-today"></div>
+  <div class="tab-panel" id="panel-shift"></div>
+  <div class="tab-panel" id="panel-flyer"></div>
+  <div class="tab-panel" id="panel-settings"></div>
+  <div class="tab-panel" id="panel-backup"></div>
+</div>
+
+<script>
+// ============================================================
+// 定数
+// ============================================================
+const WEEKDAY = ["日","月","火","水","木","金","土"];
+
+const WEEKLY_TASKS = {
+  0:[{id:"sun_order",text:"一般食品・米・雑貨 発注"},{id:"sun_pet",text:"ペットボトル回収"},{id:"sun_sale_prep",text:"菓子・雑貨カテゴリ割引 準備"}],
+  1:[{id:"mon_order",text:"菓子・酒 発注"},{id:"mon_sale_remove",text:"菓子・雑貨カテゴリ割引 撤去"},{id:"mon_uniform",text:"均一祭 準備"},{id:"mon_impro",text:"インプロPOP 付け"},{id:"mon_point",text:"ポイント3倍・チャージ特典POP 準備"}],
+  2:[{id:"tue_order",text:"一般食品・米 発注"},{id:"tue_food_sale_prep",text:"一般食品カテゴリ割引 準備"},{id:"tue_uniform_remove",text:"均一祭 撤去"},{id:"tue_impro_remove",text:"インプロPOP 撤去"},{id:"tue_point_remove",text:"ポイント3倍・チャージ特典POP 撤去"}],
+  3:[{id:"wed_order",text:"菓子・酒・雑貨 発注"},{id:"wed_food_sale_remove",text:"一般食品カテゴリ割引 撤去"}],
+  4:[{id:"thu_order",text:"一般食品・米 発注"}],
+  5:[{id:"fri_order",text:"菓子・酒 発注"},{id:"fri_sat_prep",text:"土曜市 準備"},{id:"fri_charge",text:"チャージ特典POP 準備"}],
+  6:[{id:"sat_order",text:"一般食品 発注"},{id:"sat_sat_remove",text:"土曜市 撤去"},{id:"sat_charge_remove",text:"チャージ特典POP 撤去"}],
 };
 
-function getNthWeekday(year, month, weekday, n) {
-  const d = new Date(year, month, 1);
-  let count = 0;
-  while (d.getMonth() === month) {
-    if (d.getDay() === weekday) { count++; if (count === n) return d.getDate(); }
-    d.setDate(d.getDate() + 1);
-  }
-  return null;
-}
-
-function getDateTasks(date) {
-  const d = date.getDate(), month = date.getMonth(), year = date.getFullYear();
-  const tasks = [];
-  if (d === 9) {
-    tasks.push({ id: "d9_card_prep", text: "カードの日 準備" });
-    tasks.push({ id: "d9_makasena_preview", text: "まかせな祭 予告POP掲示（本番POPに予告貼付）" });
-  }
-  if (d === 10) tasks.push({ id: "d10_card_remove", text: "カードの日 撤去" });
-  if (d === 14) tasks.push({ id: "d14_makasena_preview_remove", text: "まかせな祭 予告POP 撤去（予告部分のみ剥がす）" });
-  if (d === 15) tasks.push({ id: "d15_makasena_remove", text: "まかせな祭 撤去" });
-  if (d === 24) tasks.push({ id: "d24_card_prep", text: "カードの日 準備" });
-  if (d === 25) tasks.push({ id: "d25_card_remove", text: "カードの日 撤去" });
-  const sec2Mon = getNthWeekday(year, month, 1, 2);
-  if (sec2Mon) { const db = new Date(year, month, sec2Mon - 1); if (db.getDate() === d && db.getMonth() === month) tasks.push({ id: "food_drive_prep", text: "フードドライブ 準備（第2月曜前日）" }); }
-  const sec3Mon = getNthWeekday(year, month, 1, 3);
-  if (sec3Mon) { const db = new Date(year, month, sec3Mon - 1); if (db.getDate() === d && db.getMonth() === month) tasks.push({ id: "food_drive_remove", text: "フードドライブ 撤去（第3月曜前日）" }); }
-  return tasks;
-}
+const CAT_COLORS = {fixed:"#3b82f6",date:"#8b5cf6",flyer:"#f59e0b",variable:"#ef4444",custom:"#10b981"};
+const CAT_LABELS = {fixed:"定期",date:"日付",flyer:"チラシ",variable:"変動",custom:"追加"};
 
 // ============================================================
 // ストレージ
 // ============================================================
 const STORAGE_KEY = "taskman_v2";
-function loadState() { try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; } catch { return null; } }
-function saveState(st) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch {} }
-
+function loadState() {
+  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
+}
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+}
 function createInitialState() {
-  return {
-    flyers: [],
-    dailyLogs: {},
-    shiftPlans: {},
-  };
+  return { flyers:[], dailyLogs:{}, shiftPlans:{} };
 }
 
-function getDateKey(date) {
+let state = loadState() || createInitialState();
+if (!state.shiftPlans) state.shiftPlans = {};
+
+// ============================================================
+// ユーティリティ
+// ============================================================
+function dateKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
 }
-function parseDate(key) { const [y,m,d] = key.split("-").map(Number); return new Date(y, m-1, d); }
+function parseDate(key) {
+  const [y,m,d] = key.split("-").map(Number); return new Date(y,m-1,d);
+}
+function getNthWeekday(year,month,weekday,n) {
+  const d = new Date(year,month,1); let count=0;
+  while(d.getMonth()===month){ if(d.getDay()===weekday){count++;if(count===n)return d.getDate();} d.setDate(d.getDate()+1); }
+  return null;
+}
+function today() { return new Date(); }
 
-function getShiftPeriods(baseDate) {
-  const periods = [];
-  for (let i = -1; i <= 2; i++) {
-    const ref = new Date(baseDate.getFullYear(), baseDate.getMonth() + i, 1);
-    const start = new Date(ref.getFullYear(), ref.getMonth(), 21);
-    const end = new Date(ref.getFullYear(), ref.getMonth() + 1, 20);
-    const key = `${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,"0")}`;
-    const label = `${start.getFullYear()}/${String(start.getMonth()+1).padStart(2,"0")}/21 〜 ${end.getFullYear()}/${String(end.getMonth()+1).padStart(2,"0")}/20`;
-    periods.push({ key, label, start, end });
+function getShiftPlan(key) {
+  return state.shiftPlans[key] || {staffA:true,staffB:true,nightCashier:3,myDayOff:false,noManager:false};
+}
+function getDayLog(key) {
+  const plan = state.shiftPlans[key] || {};
+  const def = {
+    checkedTasks:[], customTasks:[],
+    staffA: plan.staffA!==undefined ? plan.staffA : true,
+    staffB: plan.staffB!==undefined ? plan.staffB : true,
+    nightCashier: plan.nightCashier!==undefined ? plan.nightCashier : 3,
+    myDayOff: plan.myDayOff!==undefined ? plan.myDayOff : false,
+    noManager: plan.noManager!==undefined ? plan.noManager : false,
+  };
+  return state.dailyLogs[key] ? {...def, ...state.dailyLogs[key]} : def;
+}
+function setDayLog(key, updates) {
+  state.dailyLogs[key] = {...getDayLog(key), ...updates};
+  saveState(); render();
+}
+
+function getDateTasks(date) {
+  const d=date.getDate(), m=date.getMonth(), y=date.getFullYear();
+  const tasks=[];
+  if(d===9){tasks.push({id:"d9_card",text:"カードの日 準備"});tasks.push({id:"d9_maka",text:"まかせな祭 予告POP掲示（本番POPに予告貼付）"});}
+  if(d===10)tasks.push({id:"d10_card",text:"カードの日 撤去"});
+  if(d===14)tasks.push({id:"d14_maka",text:"まかせな祭 予告POP 撤去（予告部分のみ剥がす）"});
+  if(d===15)tasks.push({id:"d15_maka",text:"まかせな祭 撤去"});
+  if(d===24)tasks.push({id:"d24_card",text:"カードの日 準備"});
+  if(d===25)tasks.push({id:"d25_card",text:"カードの日 撤去"});
+  const m2 = getNthWeekday(y,m,1,2);
+  if(m2){const db=new Date(y,m,m2-1);if(db.getDate()===d&&db.getMonth()===m)tasks.push({id:"fd_prep",text:"フードドライブ 準備（第2月曜前日）"});}
+  const m3 = getNthWeekday(y,m,1,3);
+  if(m3){const db=new Date(y,m,m3-1);if(db.getDate()===d&&db.getMonth()===m)tasks.push({id:"fd_remove",text:"フードドライブ 撤去（第3月曜前日）"});}
+  return tasks;
+}
+
+function getAllTasks(date, log) {
+  const dow = date.getDay();
+  const tasks = [];
+  (WEEKLY_TASKS[dow]||[]).forEach(t=>tasks.push({...t,category:"fixed"}));
+  getDateTasks(date).forEach(t=>tasks.push({...t,category:"date"}));
+  const dk = dateKey(date);
+  (state.flyers||[]).forEach(f=>{
+    if(f.end===dk) tasks.push({id:`fe_${f.id}`,text:`【チラシ入替】${f.label} 最終日 → POP総入替`,category:"flyer"});
+    if(f.start===dk) tasks.push({id:`fs_${f.id}`,text:`【チラシ初日】${f.label} スタート`,category:"flyer"});
+  });
+  const isOrdA=[0,2,4].includes(dow), isOrdB=[1,3,5].includes(dow);
+  if(!log.staffA){
+    tasks.push(log.nightCashier>=3
+      ? {id:"var_paper",text:"【A不在】紙 補充",category:"variable"}
+      : {id:"var_paper_drink",text:"【A不在・レジ少】紙・飲料・酒 補充",category:"variable"});
+    if(isOrdA) tasks.push({id:"var_order_a",text:"【A不在】一般食品・米 発注（自分で対応）",category:"variable"});
+  }
+  if(!log.staffB && isOrdB) tasks.push({id:"var_order_b",text:"【B不在】菓子・酒 発注（自分で対応）",category:"variable"});
+  if(log.noManager) tasks.push({id:"var_cash",text:"【事務所全員不在】釣銭補充・余剰金処理・翌日釣銭準備",category:"variable"});
+  (log.customTasks||[]).forEach(t=>tasks.push({...t,category:"custom"}));
+  return tasks;
+}
+
+// ============================================================
+// 状態
+// ============================================================
+let viewDate = new Date();
+let currentTab = "today";
+
+// シフトタブ用状態
+function getShiftPeriods() {
+  const periods=[], base=today();
+  for(let i=-1;i<=2;i++){
+    const ref=new Date(base.getFullYear(),base.getMonth()+i,1);
+    const start=new Date(ref.getFullYear(),ref.getMonth(),21);
+    const end=new Date(ref.getFullYear(),ref.getMonth()+1,20);
+    const key=`${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,"0")}`;
+    const label=`${start.getFullYear()}/${String(start.getMonth()+1).padStart(2,"0")}/21 〜 ${end.getFullYear()}/${String(end.getMonth()+1).padStart(2,"0")}/20`;
+    periods.push({key,label,start,end});
   }
   return periods;
 }
+const shiftPeriods = getShiftPeriods();
+const todayDate = today();
+let selectedPeriodKey = (shiftPeriods.find(p=>p.start<=todayDate&&todayDate<=p.end)||shiftPeriods[1]).key;
+let showBulk = false;
+let bulkA=true, bulkB=true, bulkC=3;
+let showAddFlyer = false;
+let saveMsg = "";
+let saveMsgTimer = null;
+let backupMsg = "";
+let backupMsgTimer = null;
+let exportText = "";
 
-function getDatesInPeriod(start, end) {
-  const dates = [];
-  const d = new Date(start);
-  while (d <= end) { dates.push(new Date(d)); d.setDate(d.getDate() + 1); }
+// ============================================================
+// HTML生成ヘルパー
+// ============================================================
+function el(tag, attrs, ...children) {
+  const e = document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs||{})) {
+    if(k==="class") e.className=v;
+    else if(k==="style") e.style.cssText=v;
+    else if(k.startsWith("on")) e.addEventListener(k.slice(2).toLowerCase(),v);
+    else e.setAttribute(k,v);
+  }
+  for(const c of children) {
+    if(c===null||c===undefined) continue;
+    if(typeof c==="string"||typeof c==="number") e.appendChild(document.createTextNode(c));
+    else if(c instanceof Node) e.appendChild(c);
+  }
+  return e;
+}
+function div(attrs,...children){return el("div",attrs,...children);}
+function span(attrs,...children){return el("span",attrs,...children);}
+function btn(attrs,...children){return el("button",attrs,...children);}
+function inp(attrs){return el("input",attrs);}
+function label(attrs,...children){return el("label",attrs,...children);}
+
+// ============================================================
+// レンダリング
+// ============================================================
+function render() {
+  renderHeader();
+  renderToday();
+  renderShift();
+  renderFlyer();
+  renderSettings();
+  renderBackup();
+}
+
+function renderHeader() {
+  const t = today();
+  document.getElementById("header-sub").textContent =
+    `${t.getFullYear()}/${String(t.getMonth()+1).padStart(2,"0")}/${String(t.getDate()).padStart(2,"0")}（${WEEKDAY[t.getDay()]}）今日`;
+
+  const dk = dateKey(viewDate);
+  const log = getDayLog(dk);
+  const allTasks = getAllTasks(viewDate, log);
+  const checked = allTasks.filter(t=>(log.checkedTasks||[]).includes(t.id)).length;
+  const total = allTasks.length;
+  const pct = total>0 ? Math.round(checked/total*100) : 0;
+
+  // プログレス
+  const circ = 2*Math.PI*22;
+  document.getElementById("progress-circle").setAttribute("stroke-dashoffset", circ*(1-pct/100));
+  document.getElementById("progress-text").textContent = pct+"%";
+
+  // 日付表示
+  const lbl = document.getElementById("view-date-label");
+  lbl.innerHTML = "";
+  const isToday = dateKey(viewDate)===dateKey(t);
+  lbl.style.color = isToday ? "#38bdf8" : "#94a3b8";
+  lbl.appendChild(document.createTextNode(`${viewDate.getMonth()+1}/${viewDate.getDate()}（${WEEKDAY[viewDate.getDay()]}）`));
+  if(isToday) { const b=span({"class":"today-badge"},"TODAY"); lbl.appendChild(b); }
+  if(log.myDayOff) { const b=span({"class":"dayoff-badge"},"休み"); lbl.appendChild(b); }
+
+  document.getElementById("task-count").textContent = `${checked}/${total} 完了`;
+}
+
+function renderToday() {
+  const panel = document.getElementById("panel-today");
+  panel.innerHTML = "";
+  const dk = dateKey(viewDate);
+  const log = getDayLog(dk);
+  const plan = getShiftPlan(dk);
+  const allTasks = getAllTasks(viewDate, log);
+
+  // 休みバナー
+  if(log.myDayOff) {
+    panel.appendChild(div({"class":"dayoff-banner"},"🏠 本日は休日として登録されています"));
+  }
+
+  // シフトカード
+  const isDiff = plan.staffA!==log.staffA||plan.staffB!==log.staffB||plan.nightCashier!==log.nightCashier||plan.myDayOff!==log.myDayOff||plan.noManager!==log.noManager;
+  const shiftCard = div({"class":"card"});
+  const shiftHead = div({style:"display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"});
+  shiftHead.appendChild(div({"class":"card-title"},"👥 シフト・人員"));
+  if(isDiff) {
+    shiftHead.appendChild(btn({"class":"sync-btn",onClick:()=>{
+      setDayLog(dk,{staffA:plan.staffA,staffB:plan.staffB,nightCashier:plan.nightCashier,myDayOff:plan.myDayOff,noManager:plan.noManager});
+    }},"📅 事前登録に戻す"));
+  }
+  shiftCard.appendChild(shiftHead);
+
+  // 自分
+  const selfDiv = div({style:"margin-bottom:10px;"});
+  const selfLabel = label({"class":"shift-label"});
+  const selfCb = inp({type:"checkbox"}); selfCb.checked=!log.myDayOff;
+  selfCb.addEventListener("change",e=>setDayLog(dk,{myDayOff:!e.target.checked}));
+  const selfBadge = span({"class":"staff-badge",style:`background:${!log.myDayOff?"#065f46":"#374151"}`},"自分");
+  selfLabel.append(selfCb, selfBadge, span({"class":!log.myDayOff?"present":"absent"},!log.myDayOff?"出勤":"休み"));
+  selfDiv.appendChild(selfLabel);
+  shiftCard.appendChild(selfDiv);
+
+  // A・B・事務所
+  const shiftRows = div({"class":"shift-row"});
+  [
+    ["staffA","Aさん（食品）","#1d4ed8"],
+    ["staffB","Bさん（菓子酒）","#1d4ed8"],
+  ].forEach(([key,name,color])=>{
+    const lbl2 = label({"class":"shift-label"});
+    const cb = inp({type:"checkbox"}); cb.checked=log[key];
+    cb.addEventListener("change",e=>setDayLog(dk,{[key]:e.target.checked}));
+    const badge = span({"class":"staff-badge",style:`background:${log[key]?color:"#374151"}`},name);
+    lbl2.append(cb,badge,span({"class":log[key]?"present":"absent"},log[key]?"出勤":"不在"));
+    shiftRows.appendChild(lbl2);
+  });
+  // 事務所
+  const mgrLabel = label({"class":"shift-label"});
+  const mgrCb = inp({type:"checkbox"}); mgrCb.checked=log.noManager;
+  mgrCb.addEventListener("change",e=>setDayLog(dk,{noManager:e.target.checked}));
+  const mgrBadge = span({"class":"staff-badge",style:`background:${log.noManager?"#7c3aed":"#374151"}`},"店長・事務所パート");
+  mgrLabel.append(mgrCb,mgrBadge,span({"class":log.noManager?"absent":"present"},log.noManager?"全員不在":"在中"));
+  shiftRows.appendChild(mgrLabel);
+  shiftCard.appendChild(shiftRows);
+
+  // 夜レジ
+  const cashierRow = div({"class":"cashier-row"});
+  cashierRow.appendChild(span({"class":"cashier-label"},"夜レジ人数"));
+  const cashierBtns = div({"class":"cashier-btns"});
+  [1,2,3,4,5].forEach(n=>{
+    const b = btn({"class":"cashier-btn"+(log.nightCashier===n?" active":"")},n+"人");
+    b.addEventListener("click",()=>setDayLog(dk,{nightCashier:n}));
+    cashierBtns.appendChild(b);
+  });
+  cashierRow.appendChild(cashierBtns);
+  shiftCard.appendChild(cashierRow);
+  panel.appendChild(shiftCard);
+
+  // チラシリマインド
+  const sorted = [...(state.flyers||[])].sort((a,b)=>a.start>b.start?1:-1);
+  const todayD = today();
+  const alertFlyers = sorted.filter(f=>{
+    const days=Math.ceil((parseDate(f.end)-viewDate)/86400000);
+    return days>=0&&days<=3&&!f.prepDone;
+  });
+  const nextFlyer = sorted.find(f=>parseDate(f.start)>viewDate);
+
+  alertFlyers.forEach(f=>{
+    const days=Math.ceil((parseDate(f.end)-viewDate)/86400000);
+    const rem=div({"class":"flyer-remind"});
+    rem.appendChild(span({},"📌 【事前準備】"+f.label+" 終了まで"+days+"日 — POP作成・売変予約"));
+    const pb=btn({"class":"prep-done-btn",onClick:()=>{
+      state.flyers=state.flyers.map(fl=>fl.id===f.id?{...fl,prepDone:true}:fl);
+      saveState();render();
+    }},"完了");
+    rem.appendChild(pb);
+    panel.appendChild(rem);
+  });
+
+  if(nextFlyer) {
+    const days=Math.ceil((parseDate(nextFlyer.start)-viewDate)/86400000);
+    if(!nextFlyer.prepDone&&alertFlyers.length===0&&days<=7) {
+      const rem=div({"class":"flyer-remind"});
+      rem.appendChild(span({},"📌 【事前準備】"+nextFlyer.label+" 初日まで"+days+"日 — POP作成・売変予約"));
+      const pb=btn({"class":"prep-done-btn",onClick:()=>{
+        state.flyers=state.flyers.map(fl=>fl.id===nextFlyer.id?{...fl,prepDone:true}:fl);
+        saveState();render();
+      }},"完了");
+      rem.appendChild(pb);
+      panel.appendChild(rem);
+    } else {
+      const cd=div({"class":"flyer-countdown"});
+      cd.appendChild(span({"class":"flyer-cd-icon"},"📄"));
+      const body=div({"class":"flyer-cd-body"});
+      body.appendChild(div({"class":"flyer-cd-label"},"次回チラシ"));
+      body.appendChild(div({"class":"flyer-cd-name"},nextFlyer.label));
+      body.appendChild(div({"class":"flyer-cd-date"},nextFlyer.start+"（"+WEEKDAY[parseDate(nextFlyer.start).getDay()]+"）初日"));
+      cd.appendChild(body);
+      const daysDiv=div({"class":"flyer-cd-days"});
+      daysDiv.appendChild(span({"class":"flyer-cd-num"},days));
+      daysDiv.appendChild(span({"class":"flyer-cd-unit"},"日後"));
+      cd.appendChild(daysDiv);
+      panel.appendChild(cd);
+    }
+  }
+
+  // タスク一覧
+  if(allTasks.length===0) {
+    panel.appendChild(div({"class":"empty-msg"},"この日のタスクはありません"));
+  } else {
+    ["fixed","date","flyer","variable","custom"].forEach(cat=>{
+      const tasks=allTasks.filter(t=>t.category===cat);
+      if(!tasks.length) return;
+      const sec=div({"class":"section"});
+      const lbl2=div({"class":"section-label",style:`color:${CAT_COLORS[cat]}`},"● "+CAT_LABELS[cat]+"タスク");
+      sec.appendChild(lbl2);
+      tasks.forEach(task=>{
+        const checked=(log.checkedTasks||[]).includes(task.id);
+        const row=div({"class":"task-row"+(checked?" checked":"")});
+        const chk=div({"class":"task-check",style:`border-color:${CAT_COLORS[cat]};background:${checked?CAT_COLORS[cat]:"transparent"}`});
+        if(checked) chk.textContent="✓";
+        const txt=span({"class":"task-text"},task.text);
+        row.appendChild(chk);
+        row.appendChild(txt);
+        if(cat==="custom"&&!checked){
+          const cb2=btn({"class":"carryover-btn",onClick:e=>{
+            e.stopPropagation();
+            const nextD=new Date(viewDate); nextD.setDate(nextD.getDate()+1);
+            const nk=dateKey(nextD); const nLog=getDayLog(nk);
+            const already=(nLog.customTasks||[]).some(t=>t.text==="【繰越】"+task.text||t.text===task.text);
+            if(!already){
+              const nTask={id:"custom_"+Date.now(),text:"【繰越】"+task.text};
+              setDayLog(nk,{customTasks:[...(nLog.customTasks||[]),nTask]});
+            }
+          }},"翌日→");
+          row.appendChild(cb2);
+        }
+        if(cat==="custom"){
+          const rb=btn({"class":"remove-btn",onClick:e=>{
+            e.stopPropagation();
+            setDayLog(dk,{customTasks:(log.customTasks||[]).filter(t=>t.id!==task.id)});
+          }},"✕");
+          row.appendChild(rb);
+        }
+        row.addEventListener("click",()=>{
+          const c=getDayLog(dk).checkedTasks||[];
+          setDayLog(dk,{checkedTasks:c.includes(task.id)?c.filter(x=>x!==task.id):[...c,task.id]});
+        });
+        sec.appendChild(row);
+      });
+      panel.appendChild(sec);
+    });
+  }
+
+  // カスタムタスク追加
+  const addCard=div({"class":"card"});
+  addCard.appendChild(div({"class":"card-title"},"＋ この日にタスクを追加"));
+  const addRow=div({"class":"add-row"});
+  const addInp=el("input",{type:"text","class":"text-input",placeholder:"例：特売発注締切 14:00"});
+  const addBtn2=btn({"class":"add-btn",onClick:()=>{
+    const txt=addInp.value.trim();
+    if(!txt) return;
+    const newT={id:"custom_"+Date.now(),text:txt};
+    setDayLog(dk,{customTasks:[...(getDayLog(dk).customTasks||[]),newT]});
+    addInp.value="";
+  }},"追加");
+  addInp.addEventListener("keydown",e=>{if(e.key==="Enter"){addBtn2.click();}});
+  addRow.appendChild(addInp);
+  addRow.appendChild(addBtn2);
+  addCard.appendChild(addRow);
+  panel.appendChild(addCard);
+}
+
+function renderShift() {
+  const panel = document.getElementById("panel-shift");
+  panel.innerHTML = "";
+
+  // 期間選択
+  const periodCard = div({"class":"card"});
+  periodCard.appendChild(div({"class":"card-title"},"📅 シフト期間を選択"));
+  const todayD = today();
+  shiftPeriods.forEach(p=>{
+    const isCurrent = p.start<=todayD&&todayD<=p.end;
+    const b=btn({"class":"period-btn"+(selectedPeriodKey===p.key?" active":""),onClick:()=>{
+      selectedPeriodKey=p.key; render();
+    }},p.label);
+    if(isCurrent) b.appendChild(span({"class":"current-badge"},"今月"));
+    periodCard.appendChild(b);
+  });
+  panel.appendChild(periodCard);
+
+  // 一括設定
+  const bulkCard=div({"class":"card"});
+  const bulkHead=div({style:"display:flex;justify-content:space-between;align-items:center;"});
+  bulkHead.appendChild(div({"class":"card-title"},"⚡ 一括設定"));
+  bulkHead.appendChild(btn({"class":"small-btn",onClick:()=>{showBulk=!showBulk;render();}},showBulk?"閉じる":"開く"));
+  bulkCard.appendChild(bulkHead);
+  if(showBulk) {
+    const bulkBody=div({style:"margin-top:10px;"});
+    const bulkRow=div({style:"display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;"});
+    // A
+    bulkRow.appendChild(span({style:"font-size:11px;color:#94a3b8;"},"Aさん"));
+    const aLbl=label({style:"display:flex;align-items:center;gap:4px;cursor:pointer;"});
+    const aCb=inp({type:"checkbox"}); aCb.checked=bulkA;
+    aCb.addEventListener("change",e=>{bulkA=e.target.checked;render();});
+    aLbl.append(aCb,span({style:"color:"+(bulkA?"#10b981":"#ef4444")+";font-size:12px;"},bulkA?"出勤":"不在"));
+    bulkRow.appendChild(aLbl);
+    // B
+    bulkRow.appendChild(span({style:"font-size:11px;color:#94a3b8;"},"Bさん"));
+    const bLbl=label({style:"display:flex;align-items:center;gap:4px;cursor:pointer;"});
+    const bCb=inp({type:"checkbox"}); bCb.checked=bulkB;
+    bCb.addEventListener("change",e=>{bulkB=e.target.checked;render();});
+    bLbl.append(bCb,span({style:"color:"+(bulkB?"#10b981":"#ef4444")+";font-size:12px;"},bulkB?"出勤":"不在"));
+    bulkRow.appendChild(bLbl);
+    // レジ
+    bulkRow.appendChild(span({style:"font-size:11px;color:#94a3b8;"},"夜レジ"));
+    const miniRow=div({style:"display:flex;gap:3px;"});
+    [1,2,3,4,5].forEach(n=>{
+      const b2=btn({"class":"mini-btn"+(bulkC===n?" active":"")},n);
+      b2.addEventListener("click",()=>{bulkC=n;render();});
+      miniRow.appendChild(b2);
+    });
+    bulkRow.appendChild(miniRow);
+    bulkBody.appendChild(bulkRow);
+    const applyRow=div({style:"display:flex;gap:6px;flex-wrap:wrap;"});
+    const period=shiftPeriods.find(p=>p.key===selectedPeriodKey)||shiftPeriods[1];
+    const dates=getDatesInPeriod(period.start,period.end);
+    [["全日に適用",dates],["平日のみ",dates.filter(d=>d.getDay()!==0&&d.getDay()!==6)],["土日のみ",dates.filter(d=>d.getDay()===0||d.getDay()===6)]].forEach(([lbl3,ds])=>{
+      const b2=btn({"class":"small-btn",style:"flex:1;",onClick:()=>{
+        ds.forEach(d=>{
+          const k=dateKey(d);
+          state.shiftPlans[k]={...getShiftPlan(k),staffA:bulkA,staffB:bulkB,nightCashier:bulkC};
+        });
+        saveState();
+        saveMsg="一括設定を適用しました";
+        if(saveMsgTimer)clearTimeout(saveMsgTimer);
+        saveMsgTimer=setTimeout(()=>{saveMsg="";render();},2000);
+        render();
+      }},lbl3);
+      applyRow.appendChild(b2);
+    });
+    bulkBody.appendChild(applyRow);
+    bulkCard.appendChild(bulkBody);
+  }
+  panel.appendChild(bulkCard);
+
+  if(saveMsg) panel.appendChild(div({"class":"save-msg"},saveMsg));
+
+  // 日別入力
+  const tableCard=div({"class":"card"});
+  tableCard.appendChild(div({"class":"card-title"},"🗓 日別シフト入力"));
+  const hdr=div({"class":"shift-table-header"});
+  hdr.innerHTML='<span style="width:54px">日付</span><span style="width:46px">自分</span><span style="width:46px">Aさん</span><span style="width:46px">Bさん</span><span style="width:46px">事務所</span><span>夜レジ</span>';
+  tableCard.appendChild(hdr);
+
+  const period=shiftPeriods.find(p=>p.key===selectedPeriodKey)||shiftPeriods[1];
+  const dates=getDatesInPeriod(period.start,period.end);
+  const todayKey=dateKey(today());
+  dates.forEach(date=>{
+    const k=dateKey(date);
+    const plan=getShiftPlan(k);
+    const dow=date.getDay();
+    const isTodayRow=k===todayKey;
+    const row=div({"class":"shift-table-row",style:
+      `background:${isTodayRow?"#0c2240":dow===0?"#1a0f0f":dow===6?"#0f1a2a":"transparent"};`+
+      `border-left:3px solid ${isTodayRow?"#38bdf8":"transparent"};`
+    });
+    // 日付
+    const dateDiv=div({style:"width:54px;flex-shrink:0;"});
+    dateDiv.appendChild(span({style:`font-size:12px;font-weight:${isTodayRow?700:400};color:${dow===0?"#f87171":dow===6?"#60a5fa":"#e2e8f0"};`},`${date.getMonth()+1}/${date.getDate()}`));
+    dateDiv.appendChild(span({style:`font-size:10px;color:${dow===0?"#f87171":dow===6?"#60a5fa":"#64748b"};margin-left:2px;`},WEEKDAY[dow]));
+    row.appendChild(dateDiv);
+    // 自分・A・B・事務所
+    [
+      ["myDayOff",true,v=>v?"#374151":"#065f46",v=>v?"#9ca3af":"#6ee7b7",v=>v?"休み":"出勤"],
+      ["staffA",false,v=>v?"#1d4ed8":"#374151",v=>v?"#bfdbfe":"#9ca3af",v=>v?"出勤":"不在"],
+      ["staffB",false,v=>v?"#1d4ed8":"#374151",v=>v?"#bfdbfe":"#9ca3af",v=>v?"出勤":"不在"],
+      ["noManager",false,v=>v?"#7c3aed":"#374151",v=>v?"#ddd6fe":"#9ca3af",v=>v?"不在":"在中"],
+    ].forEach(([key,invert,bg,color,label4])=>{
+      const cell=div({style:"width:46px;flex-shrink:0;"});
+      const val=plan[key];
+      const b2=btn({"class":"shift-toggle",style:`background:${bg(val)};color:${color(val)};`,onClick:()=>{
+        state.shiftPlans[k]={...getShiftPlan(k),[key]:!val};
+        saveState();render();
+      }},label4(val));
+      cell.appendChild(b2);
+      row.appendChild(cell);
+    });
+    // レジ
+    const rejiDiv=div({style:"display:flex;gap:2px;"});
+    [1,2,3,4,5].forEach(n=>{
+      const b2=btn({"class":"mini-btn"+(plan.nightCashier===n?" active":""),style:`opacity:${plan.myDayOff?0.35:1};`,onClick:()=>{
+        state.shiftPlans[k]={...getShiftPlan(k),nightCashier:n};
+        saveState();render();
+      }},n);
+      rejiDiv.appendChild(b2);
+    });
+    row.appendChild(rejiDiv);
+    tableCard.appendChild(row);
+  });
+  panel.appendChild(tableCard);
+  panel.appendChild(div({"class":"info-card"},"💡 ここで入力した内容はタスク画面に自動反映されます。当日に変更があった場合はタスク画面で上書きできます。"));
+}
+
+function getDatesInPeriod(start,end) {
+  const dates=[]; const d=new Date(start);
+  while(d<=end){dates.push(new Date(d));d.setDate(d.getDate()+1);}
   return dates;
 }
 
-// ============================================================
-// ShiftPlanTab
-// ============================================================
-function ShiftPlanTab({ state, setState, today }) {
-  const periods = getShiftPeriods(today);
-  const currentPeriod = periods.find(p => p.start <= today && today <= p.end) || periods[1];
-  const [selectedKey, setSelectedKey] = useState(currentPeriod.key);
-  const [saveMsg, setSaveMsg] = useState("");
-  const [showBulk, setShowBulk] = useState(false);
-  const [bulkA, setBulkA] = useState(true);
-  const [bulkB, setBulkB] = useState(true);
-  const [bulkC, setBulkC] = useState(3);
+function renderFlyer() {
+  const panel=document.getElementById("panel-flyer");
+  panel.innerHTML="";
+  const card=div({"class":"card"});
+  const head=div({style:"display:flex;justify-content:space-between;align-items:center;"});
+  head.appendChild(div({"class":"card-title"},"📄 チラシ期間管理"));
+  head.appendChild(btn({"class":"add-btn",onClick:()=>{showAddFlyer=!showAddFlyer;render();}},"＋ 追加"));
+  card.appendChild(head);
+  if(showAddFlyer) {
+    const form=div({"class":"add-form"});
+    const nameInp=el("input",{type:"text","class":"text-input",placeholder:"チラシ名（例：6月第1弾）"});
+    form.appendChild(nameInp);
+    const dateRow=div({"class":"date-input-row"});
+    const startDiv=div({}); startDiv.appendChild(div({"class":"input-label"},"初日"));
+    const startInp=el("input",{type:"date"}); startDiv.appendChild(startInp);
+    const endDiv=div({}); endDiv.appendChild(div({"class":"input-label"},"最終日"));
+    const endInp=el("input",{type:"date"}); endDiv.appendChild(endInp);
+    dateRow.appendChild(startDiv); dateRow.appendChild(endDiv);
+    form.appendChild(dateRow);
+    form.appendChild(btn({"class":"add-btn",style:"width:100%;",onClick:()=>{
+      if(!nameInp.value||!startInp.value||!endInp.value) return;
+      state.flyers.push({id:"fly_"+Date.now(),label:nameInp.value,start:startInp.value,end:endInp.value,prepDone:false});
+      showAddFlyer=false; saveState(); render();
+    }},"登録"));
+    card.appendChild(form);
+  }
+  panel.appendChild(card);
 
-  if (!state) return null;
-  const period = periods.find(p => p.key === selectedKey) || periods[1];
-  const dates = getDatesInPeriod(period.start, period.end);
-
-  const getPlan = (key) => (state?.shiftPlans || {})[key] || { staffA: true, staffB: true, nightCashier: 3, myDayOff: false, noManager: false };
-  const setPlan = (key, updates) => setState(s => ({ ...s, shiftPlans: { ...s.shiftPlans, [key]: { ...getPlan(key), ...updates } } }));
-
-  const applyBulk = (targetDates) => {
-    setState(s => {
-      const next = { ...s.shiftPlans };
-      targetDates.forEach(d => { const k = getDateKey(d); next[k] = { ...getPlan(k), staffA: bulkA, staffB: bulkB, nightCashier: bulkC }; });
-      return { ...s, shiftPlans: next };
-    });
-    setSaveMsg("一括設定を適用しました"); setTimeout(() => setSaveMsg(""), 2000);
-  };
-
-  return (
-    <div>
-      <div style={S.card}>
-        <div style={S.cardTitle}>📅 シフト期間を選択</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {periods.map(p => {
-            const isCurrent = p.start <= today && today <= p.end;
-            return (
-              <button key={p.key} style={{ ...S.periodBtn, ...(selectedKey === p.key ? S.periodBtnActive : {}) }} onClick={() => setSelectedKey(p.key)}>
-                {p.label}{isCurrent && <span style={S.currentBadge}>今月</span>}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div style={S.card}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={S.cardTitle}>⚡ 一括設定</div>
-          <button style={S.smallBtn} onClick={() => setShowBulk(v => !v)}>{showBulk ? "閉じる" : "開く"}</button>
-        </div>
-        {showBulk && (
-          <div style={{ marginTop: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-              <span style={S.bulkLabel}>Aさん</span>
-              <label style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
-                <input type="checkbox" checked={bulkA} onChange={e => setBulkA(e.target.checked)} style={S.checkbox} />
-                <span style={{ color: bulkA ? "#10b981" : "#ef4444", fontSize: 12 }}>{bulkA ? "出勤" : "不在"}</span>
-              </label>
-              <span style={S.bulkLabel}>Bさん</span>
-              <label style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
-                <input type="checkbox" checked={bulkB} onChange={e => setBulkB(e.target.checked)} style={S.checkbox} />
-                <span style={{ color: bulkB ? "#10b981" : "#ef4444", fontSize: 12 }}>{bulkB ? "出勤" : "不在"}</span>
-              </label>
-              <span style={S.bulkLabel}>夜レジ</span>
-              <div style={{ display: "flex", gap: 3 }}>
-                {[1,2,3,4,5].map(n => <button key={n} style={{ ...S.miniBtn, ...(bulkC === n ? S.miniBtnActive : {}) }} onClick={() => setBulkC(n)}>{n}</button>)}
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              <button style={{ ...S.smallBtn, flex: 1 }} onClick={() => applyBulk(dates)}>全日に適用</button>
-              <button style={{ ...S.smallBtn, flex: 1 }} onClick={() => applyBulk(dates.filter(d => d.getDay() !== 0 && d.getDay() !== 6))}>平日のみ</button>
-              <button style={{ ...S.smallBtn, flex: 1 }} onClick={() => applyBulk(dates.filter(d => d.getDay() === 0 || d.getDay() === 6))}>土日のみ</button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {saveMsg && <div style={S.saveMsg}>{saveMsg}</div>}
-
-      <div style={S.card}>
-        <div style={S.cardTitle}>🗓 日別シフト入力</div>
-        <div style={{ display: "flex", gap: 4, marginBottom: 6, fontSize: 10, color: "#475569", paddingLeft: 2 }}>
-          <span style={{ width: 54 }}>日付</span>
-          <span style={{ width: 46 }}>自分</span>
-          <span style={{ width: 46 }}>Aさん</span>
-          <span style={{ width: 46 }}>Bさん</span>
-          <span style={{ width: 46 }}>事務所</span>
-          <span>夜レジ</span>
-        </div>
-        {dates.map(date => {
-          const k = getDateKey(date);
-          const plan = getPlan(k);
-          const isToday = getDateKey(date) === getDateKey(today);
-          const dow = date.getDay();
-          return (
-            <div key={k} style={{
-              display: "flex", alignItems: "center", gap: 4, padding: "5px 4px", borderRadius: 6, marginBottom: 2,
-              background: isToday ? "#0c2240" : dow === 0 ? "#1a0f0f" : dow === 6 ? "#0f1a2a" : "transparent",
-              borderLeft: isToday ? "3px solid #38bdf8" : "3px solid transparent",
-            }}>
-              <div style={{ width: 54, flexShrink: 0 }}>
-                <span style={{ fontSize: 12, fontWeight: isToday ? 700 : 400, color: dow === 0 ? "#f87171" : dow === 6 ? "#60a5fa" : "#e2e8f0" }}>
-                  {date.getMonth()+1}/{date.getDate()}
-                </span>
-                <span style={{ fontSize: 10, color: dow === 0 ? "#f87171" : dow === 6 ? "#60a5fa" : "#64748b", marginLeft: 2 }}>
-                  {WEEKDAY_NAMES[dow]}
-                </span>
-              </div>
-              <div style={{ width: 46, flexShrink: 0 }}>
-                <button style={{ ...S.shiftToggle, background: plan.myDayOff ? "#374151" : "#065f46", color: plan.myDayOff ? "#9ca3af" : "#6ee7b7" }}
-                  onClick={() => setPlan(k, { myDayOff: !plan.myDayOff })}>
-                  {plan.myDayOff ? "休み" : "出勤"}
-                </button>
-              </div>
-              <div style={{ width: 46, flexShrink: 0 }}>
-                <button style={{ ...S.shiftToggle, background: plan.staffA ? "#1d4ed8" : "#374151", color: plan.staffA ? "#bfdbfe" : "#9ca3af" }}
-                  onClick={() => setPlan(k, { staffA: !plan.staffA })}>
-                  {plan.staffA ? "出勤" : "不在"}
-                </button>
-              </div>
-              <div style={{ width: 46, flexShrink: 0 }}>
-                <button style={{ ...S.shiftToggle, background: plan.staffB ? "#1d4ed8" : "#374151", color: plan.staffB ? "#bfdbfe" : "#9ca3af" }}
-                  onClick={() => setPlan(k, { staffB: !plan.staffB })}>
-                  {plan.staffB ? "出勤" : "不在"}
-                </button>
-              </div>
-              <div style={{ width: 46, flexShrink: 0 }}>
-                <button style={{ ...S.shiftToggle, background: plan.noManager ? "#7c3aed" : "#374151", color: plan.noManager ? "#ddd6fe" : "#9ca3af" }}
-                  onClick={() => setPlan(k, { noManager: !plan.noManager })}>
-                  {plan.noManager ? "不在" : "在中"}
-                </button>
-              </div>
-              <div style={{ display: "flex", gap: 2 }}>
-                {[1,2,3,4,5].map(n => (
-                  <button key={n} style={{ ...S.miniBtn, ...(plan.nightCashier === n ? S.miniBtnActive : {}), opacity: plan.myDayOff ? 0.35 : 1 }}
-                    onClick={() => setPlan(k, { nightCashier: n })}>{n}</button>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div style={{ ...S.card, background: "#0f2744", border: "1px solid #1e40af" }}>
-        <div style={{ fontSize: 12, color: "#60a5fa" }}>
-          💡 ここで入力した内容はタスク画面に自動反映されます。当日に変更があった場合はタスク画面のチェックボックスで上書きできます。
-        </div>
-      </div>
-    </div>
-  );
+  const todayD=today();
+  if(!state.flyers.length) panel.appendChild(div({"class":"empty-msg"},"チラシが登録されていません"));
+  [...state.flyers].sort((a,b)=>a.start>b.start?1:-1).forEach(f=>{
+    const fs=parseDate(f.start),fe=parseDate(f.end);
+    const isActive=fs<=todayD&&todayD<=fe,isPast=fe<todayD;
+    const fc=div({"class":"flyer-card",style:`border-color:${isActive?"#38bdf8":isPast?"#374151":"#1e293b"};`});
+    const top=div({"class":"flyer-top"});
+    const info=div({});
+    info.appendChild(div({"class":"flyer-name"},f.label));
+    info.appendChild(div({"class":"flyer-date-text"},`${f.start} 〜 ${f.end}（${WEEKDAY[fs.getDay()]}〜${WEEKDAY[fe.getDay()]}）`));
+    const badges=div({"class":"flyer-badges"});
+    if(isActive) badges.appendChild(span({"class":"active-badge"},"開催中"));
+    if(isPast) badges.appendChild(span({"class":"past-badge"},"終了"));
+    badges.appendChild(btn({"class":"remove-btn",onClick:()=>{
+      state.flyers=state.flyers.filter(x=>x.id!==f.id); saveState(); render();
+    }},"✕"));
+    top.appendChild(info); top.appendChild(badges);
+    fc.appendChild(top);
+    const prep=div({"class":"prep-row"});
+    prep.appendChild(span({style:`color:${f.prepDone?"#10b981":"#94a3b8"};font-size:12px;`},f.prepDone?"✅ 事前準備完了":"⏳ 事前準備未完了"));
+    prep.appendChild(btn({"class":"prep-done-btn",style:`opacity:${f.prepDone?0.5:1};`,onClick:()=>{
+      state.flyers=state.flyers.map(fl=>fl.id===f.id?{...fl,prepDone:!fl.prepDone}:fl);
+      saveState(); render();
+    }},f.prepDone?"戻す":"完了にする"));
+    fc.appendChild(prep);
+    panel.appendChild(fc);
+  });
 }
 
-// ============================================================
-// App
-// ============================================================
-function App() {
-  const [state, setState] = useState(() => { const s = loadState(); if (s && !s.shiftPlans) return {...s, shiftPlans:{}}; return s || createInitialState(); });
-  const [today, setToday] = useState(new Date());
-  const [viewDate, setViewDate] = useState(new Date());
-  const [tab, setTab] = useState("today");
-  const [showAddFlyer, setShowAddFlyer] = useState(false);
-  const [newFlyer, setNewFlyer] = useState({ label: "", start: "", end: "" });
-  const [newCustomText, setNewCustomText] = useState("");
-  const [backupMsg, setBackupMsg] = useState("");
-  const [exportText, setExportText] = useState("");
-  const [importText, setImportText] = useState("");
+function renderSettings() {
+  const panel=document.getElementById("panel-settings");
+  panel.innerHTML="";
+  const card=div({"class":"card"});
+  card.appendChild(div({"class":"card-title"},"📋 固定タスク一覧（参照用）"));
+  WEEKDAY.forEach((name,dow)=>{
+    const ws=div({"class":"week-section"});
+    ws.appendChild(div({"class":"week-label"},name+"曜日"));
+    const tasks=WEEKLY_TASKS[dow]||[];
+    tasks.forEach(t=>ws.appendChild(div({"class":"ref-task"},"・"+t.text)));
+    if(!tasks.length) ws.appendChild(div({"class":"ref-task"},"（なし）"));
+    card.appendChild(ws);
+  });
+  const ds=div({"class":"week-section"});
+  ds.appendChild(div({"class":"week-label"},"日付固定"));
+  ["9日：カードの日準備 ／ まかせな祭予告POP掲示","10日：カードの日撤去","14日：まかせな祭予告POP撤去","15日：まかせな祭撤去","24日：カードの日準備","25日：カードの日撤去","第2月曜前日：フードドライブ準備","第3月曜前日：フードドライブ撤去"]
+    .forEach(t=>ds.appendChild(div({"class":"ref-task"},"・"+t)));
+  card.appendChild(ds);
+  panel.appendChild(card);
+}
 
-  useEffect(() => { const t = setInterval(() => setToday(new Date()), 60000); return () => clearInterval(t); }, []);
-  useEffect(() => { saveState(state); }, [state]);
+function renderBackup() {
+  const panel=document.getElementById("panel-backup");
+  panel.innerHTML="";
 
-  const dateKey = getDateKey(viewDate);
-
-  const getShiftPlan = useCallback((key) => (state?.shiftPlans || {})[key] || { staffA: true, staffB: true, nightCashier: 3, myDayOff: false, noManager: false }, [state?.shiftPlans]);
-
-  const getDayLog = useCallback((key) => {
-    const plan = (state?.shiftPlans || {})[key] || {};
-    const defaults = { checkedTasks: [], staffA: plan.staffA !== undefined ? plan.staffA : true, staffB: plan.staffB !== undefined ? plan.staffB : true, nightCashier: plan.nightCashier !== undefined ? plan.nightCashier : 3, myDayOff: plan.myDayOff !== undefined ? plan.myDayOff : false, noManager: plan.noManager !== undefined ? plan.noManager : false, customTasks: [] };
-    const saved = (state?.dailyLogs || {})[key];
-    return saved ? { ...defaults, ...saved } : defaults;
-  }, [state?.dailyLogs, state?.shiftPlans]);
-
-  const updateDayLog = (key, updates) => setState(s => ({ ...s, dailyLogs: { ...s.dailyLogs, [key]: { ...getDayLog(key), ...updates } } }));
-
-  const log = getDayLog(dateKey);
-
-  const getAllTasks = (date, dayLog) => {
-    const dow = date.getDay();
-    const tasks = [];
-    (FIXED_WEEKLY_TASKS[dow] || []).forEach(t => tasks.push({ ...t, category: "fixed" }));
-    getDateTasks(date).forEach(t => tasks.push({ ...t, category: "date" }));
-    const dKey = getDateKey(date);
-    (state?.flyers || []).forEach(f => {
-      if (f.end === dKey) tasks.push({ id: `flyer_end_${f.id}`, text: `【チラシ入替】${f.label} 最終日 → POP総入替`, category: "flyer" });
-      if (f.start === dKey) tasks.push({ id: `flyer_start_${f.id}`, text: `【チラシ初日】${f.label} スタート`, category: "flyer" });
+  // エクスポート
+  const expCard=div({"class":"card"});
+  expCard.appendChild(div({"class":"card-title"},"📤 バックアップ（書き出し）"));
+  expCard.appendChild(div({"class":"help-text"},"全データをテキストにコピーします。メモ帳・メモアプリ等に貼り付けて保存してください。"));
+  expCard.appendChild(btn({"class":"add-btn",style:"width:100%;margin-bottom:8px;",onClick:()=>{
+    const json=JSON.stringify(state,null,2);
+    navigator.clipboard.writeText(json).then(()=>{
+      exportText="";
+      backupMsg="クリップボードにコピーしました！";
+    }).catch(()=>{
+      exportText=json;
+      backupMsg="以下のテキストをコピーして保存してください。";
     });
-    const isOrdA = [0, 2, 4].includes(dow), isOrdB = [1, 3, 5].includes(dow);
-    if (!dayLog.staffA) {
-      tasks.push(dayLog.nightCashier >= 3 ? { id: "var_paper", text: "【A不在】紙 補充", category: "variable" } : { id: "var_paper_drink_sake", text: "【A不在・レジ少】紙・飲料・酒 補充", category: "variable" });
-      if (isOrdA) tasks.push({ id: "var_order_a", text: "【A不在】一般食品・米 発注（自分で対応）", category: "variable" });
+    if(backupMsgTimer)clearTimeout(backupMsgTimer);
+    backupMsgTimer=setTimeout(()=>{backupMsg="";render();},6000);
+    render();
+  }},"クリップボードにコピー"));
+  if(exportText) {
+    const ta=el("textarea",{style:"height:120px;font-size:10px;font-family:monospace;"},exportText);
+    ta.addEventListener("focus",e=>e.target.select());
+    expCard.appendChild(ta);
+  }
+  if(backupMsg) expCard.appendChild(div({"class":"backup-msg"},backupMsg));
+  panel.appendChild(expCard);
+
+  // インポート
+  const impCard=div({"class":"card"});
+  impCard.appendChild(div({"class":"card-title"},"📥 バックアップから復元"));
+  impCard.appendChild(div({"class":"help-text"},"保存したJSONテキストを以下に貼り付けて「復元」を押してください。"));
+  const ta2=el("textarea",{style:"height:100px;font-size:10px;font-family:monospace;margin-bottom:8px;",placeholder:'{"flyers":[],"dailyLogs":{},"shiftPlans":{}}'});
+  impCard.appendChild(ta2);
+  impCard.appendChild(btn({"class":"add-btn",style:"width:100%;",onClick:()=>{
+    try{
+      const parsed=JSON.parse(ta2.value);
+      state=parsed; saveState();
+      ta2.value="";
+      backupMsg="復元しました！";
+    }catch{backupMsg="JSONの形式が正しくありません";}
+    if(backupMsgTimer)clearTimeout(backupMsgTimer);
+    backupMsgTimer=setTimeout(()=>{backupMsg="";render();},3000);
+    render();
+  }},"復元する"));
+  panel.appendChild(impCard);
+
+  // リセット
+  const resetCard=div({"class":"card"});
+  resetCard.appendChild(div({"class":"card-title"},"🗑️ データリセット"));
+  resetCard.appendChild(div({"class":"help-text"},"全データを削除してリセットします。この操作は取り消せません。"));
+  resetCard.appendChild(btn({"class":"reset-btn",onClick:()=>{
+    if(window.confirm("全データをリセットしますか？バックアップを先に取ることをおすすめします。")){
+      state=createInitialState(); saveState();
+      backupMsg="リセットしました";
+      if(backupMsgTimer)clearTimeout(backupMsgTimer);
+      backupMsgTimer=setTimeout(()=>{backupMsg="";render();},3000);
+      render();
     }
-    if (!dayLog.staffB && isOrdB) tasks.push({ id: "var_order_b", text: "【B不在】菓子・酒 発注（自分で対応）", category: "variable" });
-    if (dayLog.noManager) tasks.push({ id: "var_cash", text: "【事務所全員不在】釣銭補充・余剰金処理・翌日釣銭準備", category: "variable" });
-    (dayLog.customTasks || []).forEach(t => tasks.push({ ...t, category: "custom" }));
-    return tasks;
-  };
-
-  const allTasks = getAllTasks(viewDate, log);
-  const checkedCount = allTasks.filter(t => (log.checkedTasks || []).includes(t.id)).length;
-  const totalCount = allTasks.length;
-  const progress = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0;
-
-  const toggleCheck = (id) => { const c = log.checkedTasks || []; updateDayLog(dateKey, { checkedTasks: c.includes(id) ? c.filter(x => x !== id) : [...c, id] }); };
-  const addCustom = (text) => { if (!text.trim()) return; updateDayLog(dateKey, { customTasks: [...(log.customTasks || []), { id: `custom_${Date.now()}`, text: text.trim() }] }); };
-  const removeCustom = (id) => updateDayLog(dateKey, { customTasks: (log.customTasks || []).filter(t => t.id !== id) });
-  const carryOver = (task) => {
-    const nextDate = new Date(viewDate);
-    nextDate.setDate(nextDate.getDate() + 1);
-    const nextKey = getDateKey(nextDate);
-    const nextLog = getDayLog(nextKey);
-    const already = (nextLog.customTasks || []).some(t => t.text === `【繰越】${task.text}` || t.text === task.text);
-    if (already) return;
-    const newTask = { id: `custom_${Date.now()}`, text: `【繰越】${task.text}` };
-    updateDayLog(nextKey, { customTasks: [...(nextLog.customTasks || []), newTask] });
-  };
-
-  const handleExport = () => {
-    const json = JSON.stringify(state, null, 2);
-    navigator.clipboard.writeText(json).then(() => {
-      setBackupMsg("クリップボードにコピーしました！メモ帳等に貼り付けて保存してください。");
-    }).catch(() => {
-      setExportText(json);
-      setBackupMsg("以下のテキストをコピーして保存してください。");
-    });
-    setTimeout(() => setBackupMsg(""), 6000);
-  };
-  const handleImport = () => {
-    try {
-      const parsed = JSON.parse(importText);
-      setState(parsed);
-      setImportText("");
-      setBackupMsg("復元しました！");
-    } catch { setBackupMsg("JSONの形式が正しくありません"); }
-    setTimeout(() => setBackupMsg(""), 3000);
-  };
-
-  const plan = getShiftPlan(dateKey);
-  const isDiff = plan.staffA !== log.staffA || plan.staffB !== log.staffB || plan.nightCashier !== log.nightCashier || plan.myDayOff !== log.myDayOff || plan.noManager !== log.noManager;
-  const syncFromPlan = () => updateDayLog(dateKey, { staffA: plan.staffA, staffB: plan.staffB, nightCashier: plan.nightCashier, myDayOff: plan.myDayOff, noManager: plan.noManager });
-
-  const catColors = { fixed: "#3b82f6", date: "#8b5cf6", flyer: "#f59e0b", variable: "#ef4444", custom: "#10b981" };
-  const catLabels = { fixed: "定期", date: "日付", flyer: "チラシ", variable: "変動", custom: "追加" };
-  const isToday = getDateKey(viewDate) === getDateKey(today);
-
-  return (
-    <div style={S.root}>
-      <div style={S.header}>
-        <div style={S.headerTop}>
-          <div>
-            <div style={S.headerTitle}>業務タスク</div>
-            <div style={S.headerSub}>{today.getFullYear()}/{String(today.getMonth()+1).padStart(2,"0")}/{String(today.getDate()).padStart(2,"0")}（{WEEKDAY_NAMES[today.getDay()]}）今日</div>
-          </div>
-          <svg width="56" height="56" viewBox="0 0 56 56">
-            <circle cx="28" cy="28" r="22" fill="none" stroke="#1e293b" strokeWidth="5"/>
-            <circle cx="28" cy="28" r="22" fill="none" stroke="#38bdf8" strokeWidth="5"
-              strokeDasharray={`${2*Math.PI*22}`} strokeDashoffset={`${2*Math.PI*22*(1-progress/100)}`}
-              strokeLinecap="round" transform="rotate(-90 28 28)" style={{transition:"stroke-dashoffset 0.4s"}}/>
-            <text x="28" y="33" textAnchor="middle" fill="#e2e8f0" fontSize="13" fontWeight="700">{progress}%</text>
-          </svg>
-        </div>
-        <div style={S.dateNav}>
-          <button style={S.navBtn} onClick={() => { const d = new Date(viewDate); d.setDate(d.getDate()-1); setViewDate(d); }}>‹</button>
-          <div style={{textAlign:"center"}}>
-            <div style={{...S.viewDateLabel, color: isToday ? "#38bdf8" : "#94a3b8"}}>
-              {viewDate.getMonth()+1}/{viewDate.getDate()}（{WEEKDAY_NAMES[viewDate.getDay()]}）
-              {isToday && <span style={S.todayBadge}>TODAY</span>}
-              {log.myDayOff && <span style={S.dayOffBadge}>休み</span>}
-            </div>
-            <div style={S.taskCount}>{checkedCount}/{totalCount} 完了</div>
-          </div>
-          <button style={S.navBtn} onClick={() => { const d = new Date(viewDate); d.setDate(d.getDate()+1); setViewDate(d); }}>›</button>
-        </div>
-      </div>
-
-      <div style={S.tabBar}>
-        {[["today","📋 タスク"],["shift","👤 シフト"],["flyer","📄 チラシ"],["settings","⚙️ 設定"],["backup","💾 BK"]].map(([key,label]) => (
-          <button key={key} style={{...S.tab, ...(tab===key ? S.tabActive : {})}} onClick={()=>setTab(key)}>{label}</button>
-        ))}
-      </div>
-
-      <div style={S.body}>
-
-        {tab === "today" && (
-          <div>
-            {log.myDayOff && <div style={S.dayOffBanner}>🏠 本日は休日として登録されています</div>}
-
-            <div style={S.card}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <div style={S.cardTitle}>👥 シフト・人員</div>
-                {isDiff && <button style={S.syncBtn} onClick={syncFromPlan}>📅 事前登録に戻す</button>}
-              </div>
-              <div style={{ marginBottom: 10 }}>
-                <label style={S.shiftLabel}>
-                  <input type="checkbox" checked={!log.myDayOff} onChange={e => updateDayLog(dateKey, { myDayOff: !e.target.checked })} style={S.checkbox}/>
-                  <span style={{ ...S.staffBadge, background: !log.myDayOff ? "#065f46" : "#374151" }}>自分</span>
-                  {!log.myDayOff ? <span style={S.present}>出勤</span> : <span style={S.absent}>休み</span>}
-                </label>
-              </div>
-              <div style={S.shiftRow}>
-                <label style={S.shiftLabel}>
-                  <input type="checkbox" checked={log.staffA} onChange={e => updateDayLog(dateKey, { staffA: e.target.checked })} style={S.checkbox}/>
-                  <span style={{ ...S.staffBadge, background: log.staffA ? "#1d4ed8" : "#374151" }}>Aさん（食品）</span>
-                  {log.staffA ? <span style={S.present}>出勤</span> : <span style={S.absent}>不在</span>}
-                </label>
-                <label style={S.shiftLabel}>
-                  <input type="checkbox" checked={log.staffB} onChange={e => updateDayLog(dateKey, { staffB: e.target.checked })} style={S.checkbox}/>
-                  <span style={{ ...S.staffBadge, background: log.staffB ? "#1d4ed8" : "#374151" }}>Bさん（菓子酒）</span>
-                  {log.staffB ? <span style={S.present}>出勤</span> : <span style={S.absent}>不在</span>}
-                </label>
-                <label style={S.shiftLabel}>
-                  <input type="checkbox" checked={log.noManager} onChange={e => updateDayLog(dateKey, { noManager: e.target.checked })} style={S.checkbox}/>
-                  <span style={{ ...S.staffBadge, background: log.noManager ? "#7c3aed" : "#374151" }}>店長・事務所パート</span>
-                  {log.noManager ? <span style={S.absent}>全員不在</span> : <span style={S.present}>在中</span>}
-                </label>
-              </div>
-              <div style={S.cashierRow}>
-                <span style={S.cashierLabel}>夜レジ人数</span>
-                <div style={S.cashierBtns}>
-                  {[1,2,3,4,5].map(n => <button key={n} style={{...S.cashierBtn, ...(log.nightCashier===n ? S.cashierBtnActive : {})}} onClick={() => updateDayLog(dateKey, { nightCashier: n })}>{n}人</button>)}
-                </div>
-              </div>
-            </div>
-
-            {/* チラシリマインド */}
-            {(() => {
-              const sorted = [...(state?.flyers||[])].sort((a,b) => a.start > b.start ? 1 : -1);
-              const alertFlyers = sorted.filter(f => { const days = Math.ceil((parseDate(f.end) - viewDate) / 86400000); return days >= 0 && days <= 3 && !f.prepDone; });
-              const nextFlyer = sorted.find(f => parseDate(f.start) > viewDate);
-              return (
-                <>
-                  {alertFlyers.map(f => (
-                    <div key={f.id} style={S.flyerRemind}>
-                      <span>📌 【事前準備】{f.label} 終了まで{Math.ceil((parseDate(f.end)-viewDate)/86400000)}日 — POP作成・売変予約</span>
-                      <button style={S.prepDoneBtn} onClick={() => setState(s => ({...s, flyers: s.flyers.map(fl => fl.id===f.id ? {...fl,prepDone:true} : fl)}))}>完了</button>
-                    </div>
-                  ))}
-                  {nextFlyer && (() => {
-                    const days = Math.ceil((parseDate(nextFlyer.start) - viewDate) / 86400000);
-                    if (!nextFlyer.prepDone && alertFlyers.length === 0 && days <= 7) return (
-                      <div key="remind" style={S.flyerRemind}>
-                        <span>📌 【事前準備】{nextFlyer.label} 初日まで{days}日 — POP作成・売変予約</span>
-                        <button style={S.prepDoneBtn} onClick={() => setState(s => ({...s, flyers: s.flyers.map(fl => fl.id===nextFlyer.id ? {...fl,prepDone:true} : fl)}))}>完了</button>
-                      </div>
-                    );
-                    return (
-                      <div key="cd" style={S.flyerCountdown}>
-                        <span style={S.flyerCountdownIcon}>📄</span>
-                        <div style={S.flyerCountdownBody}>
-                          <div style={S.flyerCountdownLabel}>次回チラシ</div>
-                          <div style={S.flyerCountdownName}>{nextFlyer.label}</div>
-                          <div style={S.flyerCountdownDate}>{nextFlyer.start}（{WEEKDAY_NAMES[parseDate(nextFlyer.start).getDay()]}）初日</div>
-                        </div>
-                        <div style={S.flyerCountdownDays}>
-                          <span style={S.flyerCountdownNum}>{days}</span>
-                          <span style={S.flyerCountdownUnit}>日後</span>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </>
-              );
-            })()}
-
-            {allTasks.length === 0
-              ? <div style={S.emptyMsg}>この日のタスクはありません</div>
-              : ["fixed","date","flyer","variable","custom"].map(cat => {
-                  const ct = allTasks.filter(t => t.category === cat);
-                  if (!ct.length) return null;
-                  return (
-                    <div key={cat} style={S.section}>
-                      <div style={{...S.sectionLabel, color: catColors[cat]}}>● {catLabels[cat]}タスク</div>
-                      {ct.map(task => {
-                        const checked = (log.checkedTasks||[]).includes(task.id);
-                        return (
-                          <div key={task.id} style={{...S.taskRow, ...(checked ? S.taskChecked : {})}} onClick={() => toggleCheck(task.id)}>
-                            <div style={{...S.taskCheck, borderColor: catColors[cat], background: checked ? catColors[cat] : "transparent"}}>
-                              {checked && <span style={{color:"#fff",fontSize:12}}>✓</span>}
-                            </div>
-                            <span style={{...S.taskText, textDecoration: checked?"line-through":"none", color: checked?"#64748b":"#e2e8f0"}}>{task.text}</span>
-                            {cat === "custom" && !checked && <button style={S.carryOverBtn} onClick={e=>{e.stopPropagation();carryOver(task);}}>翌日→</button>}
-                            {cat === "custom" && <button style={S.removeBtn} onClick={e=>{e.stopPropagation();removeCustom(task.id);}}>✕</button>}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })
-            }
-
-            <div style={S.card}>
-              <div style={S.cardTitle}>＋ この日にタスクを追加</div>
-              <div style={S.addRow}>
-                <input style={S.input} placeholder="例：特売発注締切 14:00" value={newCustomText} onChange={e=>setNewCustomText(e.target.value)}
-                  onKeyDown={e=>{if(e.key==="Enter"){addCustom(newCustomText);setNewCustomText("");}}}/>
-                <button style={S.addBtn} onClick={()=>{addCustom(newCustomText);setNewCustomText("");}}>追加</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {tab === "shift" && <ShiftPlanTab state={state} setState={setState} today={today} />}
-
-        {tab === "flyer" && (
-          <div>
-            <div style={S.card}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={S.cardTitle}>📄 チラシ期間管理</div>
-                <button style={S.addBtn} onClick={()=>setShowAddFlyer(v=>!v)}>＋ 追加</button>
-              </div>
-              {showAddFlyer && (
-                <div style={S.addForm}>
-                  <input style={S.input} placeholder="チラシ名（例：6月第1弾）" value={newFlyer.label} onChange={e=>setNewFlyer(f=>({...f,label:e.target.value}))}/>
-                  <div style={S.dateInputRow}>
-                    <div style={{flex:1}}><div style={S.inputLabel}>初日</div><input type="date" style={S.input} value={newFlyer.start} onChange={e=>setNewFlyer(f=>({...f,start:e.target.value}))}/></div>
-                    <div style={{flex:1}}><div style={S.inputLabel}>最終日</div><input type="date" style={S.input} value={newFlyer.end} onChange={e=>setNewFlyer(f=>({...f,end:e.target.value}))}/></div>
-                  </div>
-                  <button style={{...S.addBtn,width:"100%"}} onClick={()=>{
-                    if(!newFlyer.label||!newFlyer.start||!newFlyer.end) return;
-                    setState(s=>({...s,flyers:[...s.flyers,{...newFlyer,id:`fly_${Date.now()}`,prepDone:false}]}));
-                    setNewFlyer({label:"",start:"",end:""}); setShowAddFlyer(false);
-                  }}>登録</button>
-                </div>
-              )}
-            </div>
-            {(state?.flyers||[]).length === 0 && <div style={S.emptyMsg}>チラシが登録されていません</div>}
-            {[...(state?.flyers||[])].sort((a,b)=>a.start>b.start?1:-1).map(f => {
-              const fs=parseDate(f.start),fe=parseDate(f.end);
-              const isActive=fs<=today&&today<=fe,isPast=fe<today;
-              return (
-                <div key={f.id} style={{...S.flyerCard,borderColor:isActive?"#38bdf8":isPast?"#374151":"#1e293b"}}>
-                  <div style={S.flyerTop}>
-                    <div><div style={S.flyerName}>{f.label}</div><div style={S.flyerDate}>{f.start} 〜 {f.end}（{WEEKDAY_NAMES[fs.getDay()]}〜{WEEKDAY_NAMES[fe.getDay()]}）</div></div>
-                    <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                      {isActive&&<span style={S.activeBadge}>開催中</span>}
-                      {isPast&&<span style={S.pastBadge}>終了</span>}
-                      <button style={S.removeBtn} onClick={()=>setState(s=>({...s,flyers:s.flyers.filter(x=>x.id!==f.id)}))}>✕</button>
-                    </div>
-                  </div>
-                  <div style={S.prepRow}>
-                    <span style={{color:f.prepDone?"#10b981":"#94a3b8",fontSize:12}}>{f.prepDone?"✅ 事前準備完了":"⏳ 事前準備未完了"}</span>
-                    <button style={{...S.prepDoneBtn,opacity:f.prepDone?0.5:1}} onClick={()=>setState(s=>({...s,flyers:s.flyers.map(fl=>fl.id===f.id?{...fl,prepDone:!fl.prepDone}:fl)}))}>
-                      {f.prepDone?"戻す":"完了にする"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {tab === "settings" && (
-          <div>
-            <div style={S.card}>
-              <div style={S.cardTitle}>📋 固定タスク一覧（参照用）</div>
-              {WEEKDAY_NAMES.map((name,dow) => (
-                <div key={dow} style={S.weekSection}>
-                  <div style={S.weekLabel}>{name}曜日</div>
-                  {(FIXED_WEEKLY_TASKS[dow]||[]).map(t=><div key={t.id} style={S.refTask}>・{t.text}</div>)}
-                  {!(FIXED_WEEKLY_TASKS[dow]||[]).length&&<div style={S.refTask}>（なし）</div>}
-                </div>
-              ))}
-              <div style={S.weekSection}>
-                <div style={S.weekLabel}>日付固定</div>
-                {["9日：カードの日準備 ／ まかせな祭予告POP掲示","10日：カードの日撤去","14日：まかせな祭予告POP撤去","15日：まかせな祭撤去","24日：カードの日準備","25日：カードの日撤去","第2月曜前日：フードドライブ準備","第3月曜前日：フードドライブ撤去"].map((t,i)=><div key={i} style={S.refTask}>・{t}</div>)}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {tab === "backup" && (
-          <div>
-            <div style={S.card}>
-              <div style={S.cardTitle}>📤 バックアップ（書き出し）</div>
-              <p style={S.helpText}>全データをテキストにコピーします。メモ帳・メモアプリ等に貼り付けて保存してください。</p>
-              <button style={{...S.addBtn,width:"100%",marginBottom:8}} onClick={handleExport}>クリップボードにコピー</button>
-              {exportText && (
-                <textarea
-                  style={{...S.input, width:"100%", height:120, fontSize:10, marginTop:4, resize:"none", fontFamily:"monospace", boxSizing:"border-box"}}
-                  value={exportText}
-                  readOnly
-                  onFocus={e=>e.target.select()}
-                />
-              )}
-              {backupMsg && <div style={S.backupMsg}>{backupMsg}</div>}
-            </div>
-            <div style={S.card}>
-              <div style={S.cardTitle}>📥 バックアップから復元</div>
-              <p style={S.helpText}>保存したJSONテキストを以下に貼り付けて「復元」を押してください。</p>
-              <textarea
-                style={{...S.input, width:"100%", height:100, fontSize:10, marginBottom:8, resize:"none", fontFamily:"monospace", boxSizing:"border-box"}}
-                placeholder='{"flyers":[],"dailyLogs":{},"shiftPlans":{}}'
-                value={importText}
-                onChange={e=>setImportText(e.target.value)}
-              />
-              <button style={{...S.addBtn,width:"100%"}} onClick={handleImport}>復元する</button>
-            </div>
-            <div style={S.card}>
-              <div style={S.cardTitle}>🗑️ データリセット</div>
-              <p style={S.helpText}>全データを削除してリセットします。この操作は取り消せません。</p>
-              <button style={{...S.addBtn,width:"100%",background:"#7f1d1d",border:"1px solid #ef4444"}} onClick={()=>{
-                if(window.confirm("全データをリセットしますか？バックアップを先に取ることをおすすめします。")){
-                  setState(createInitialState()); setBackupMsg("リセットしました"); setTimeout(()=>setBackupMsg(""),3000);
-                }
-              }}>⚠️ リセット</button>
-            </div>
-          </div>
-        )}
-
-      </div>
-    </div>
-  );
+  }},"⚠️ リセット"));
+  panel.appendChild(resetCard);
 }
 
 // ============================================================
-// スタイル
+// イベント設定
 // ============================================================
-const S = {
-  root: { background: "#0f172a", minHeight: "100vh", fontFamily: "'Noto Sans JP', sans-serif", color: "#e2e8f0", maxWidth: 480, margin: "0 auto", paddingBottom: 40 },
-  header: { background: "linear-gradient(135deg,#1e293b,#0f172a)", padding: "16px 16px 0", borderBottom: "1px solid #1e293b" },
-  headerTop: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  headerTitle: { fontSize: 20, fontWeight: 700, color: "#f1f5f9", letterSpacing: 2 },
-  headerSub: { fontSize: 12, color: "#64748b", marginTop: 2 },
-  dateNav: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0 12px" },
-  navBtn: { background: "none", border: "1px solid #334155", color: "#94a3b8", fontSize: 22, width: 36, height: 36, borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" },
-  viewDateLabel: { fontSize: 16, fontWeight: 700 },
-  todayBadge: { background: "#38bdf8", color: "#0f172a", fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 4, marginLeft: 6 },
-  dayOffBadge: { background: "#374151", color: "#9ca3af", fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 4, marginLeft: 6 },
-  taskCount: { fontSize: 11, color: "#64748b", marginTop: 2 },
-  tabBar: { display: "flex", background: "#1e293b", borderBottom: "1px solid #334155", overflowX: "auto" },
-  tab: { flex: 1, padding: "10px 2px", background: "none", border: "none", color: "#64748b", fontSize: 10, cursor: "pointer", whiteSpace: "nowrap", fontWeight: 500 },
-  tabActive: { color: "#38bdf8", borderBottom: "2px solid #38bdf8" },
-  body: { padding: 12 },
-  card: { background: "#1e293b", borderRadius: 12, padding: 14, marginBottom: 12, border: "1px solid #334155" },
-  cardTitle: { fontSize: 13, fontWeight: 700, color: "#94a3b8", marginBottom: 10, letterSpacing: 1 },
-  dayOffBanner: { background: "#1a1a2e", border: "1px solid #374151", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#9ca3af", marginBottom: 10, textAlign: "center" },
-  shiftRow: { display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 },
-  shiftLabel: { display: "flex", alignItems: "center", gap: 8, cursor: "pointer" },
-  checkbox: { width: 16, height: 16, accentColor: "#38bdf8" },
-  staffBadge: { fontSize: 12, padding: "2px 8px", borderRadius: 6, color: "#e2e8f0", fontWeight: 600 },
-  present: { fontSize: 11, color: "#10b981" },
-  absent: { fontSize: 11, color: "#ef4444" },
-  cashierRow: { display: "flex", alignItems: "center", gap: 8 },
-  cashierLabel: { fontSize: 12, color: "#94a3b8", whiteSpace: "nowrap" },
-  cashierBtns: { display: "flex", gap: 4, flexWrap: "wrap" },
-  cashierBtn: { background: "#334155", border: "none", color: "#94a3b8", fontSize: 12, padding: "4px 10px", borderRadius: 6, cursor: "pointer" },
-  cashierBtnActive: { background: "#0369a1", color: "#fff", fontWeight: 700 },
-  syncBtn: { background: "none", border: "1px solid #334155", color: "#60a5fa", fontSize: 10, padding: "4px 8px", borderRadius: 6, cursor: "pointer" },
-  section: { marginBottom: 8 },
-  sectionLabel: { fontSize: 11, fontWeight: 700, marginBottom: 4, paddingLeft: 4, letterSpacing: 1 },
-  taskRow: { display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "#1e293b", borderRadius: 8, marginBottom: 4, cursor: "pointer", border: "1px solid #334155" },
-  taskChecked: { background: "#0f172a", borderColor: "#1e293b" },
-  taskCheck: { width: 20, height: 20, borderRadius: 6, border: "2px solid", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
-  taskText: { fontSize: 13, flex: 1, lineHeight: 1.4 },
-  removeBtn: { background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 14, padding: "0 4px" },
-  carryOverBtn: { background: "none", border: "1px solid #334155", color: "#60a5fa", cursor: "pointer", fontSize: 10, padding: "2px 6px", borderRadius: 5, whiteSpace: "nowrap", flexShrink: 0 },
-  flyerRemind: { background: "#1c1408", border: "1px solid #92400e", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "#fcd34d", marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 },
-  prepDoneBtn: { background: "#065f46", border: "none", color: "#6ee7b7", fontSize: 11, padding: "4px 8px", borderRadius: 6, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 },
-  flyerCountdown: { display: "flex", alignItems: "center", gap: 10, background: "#0f2744", border: "1px solid #1e40af", borderRadius: 10, padding: "10px 14px", marginBottom: 8 },
-  flyerCountdownIcon: { fontSize: 20, flexShrink: 0 },
-  flyerCountdownBody: { flex: 1, minWidth: 0 },
-  flyerCountdownLabel: { fontSize: 10, color: "#60a5fa", fontWeight: 700, letterSpacing: 1, marginBottom: 1 },
-  flyerCountdownName: { fontSize: 13, fontWeight: 700, color: "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
-  flyerCountdownDate: { fontSize: 11, color: "#64748b", marginTop: 1 },
-  flyerCountdownDays: { display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 },
-  flyerCountdownNum: { fontSize: 28, fontWeight: 800, color: "#38bdf8", lineHeight: 1 },
-  flyerCountdownUnit: { fontSize: 10, color: "#60a5fa", marginTop: 1 },
-  emptyMsg: { textAlign: "center", color: "#475569", fontSize: 13, padding: 24 },
-  addRow: { display: "flex", gap: 8 },
-  input: { flex: 1, background: "#0f172a", border: "1px solid #334155", borderRadius: 8, color: "#e2e8f0", padding: "8px 10px", fontSize: 13, outline: "none" },
-  addBtn: { background: "#1d4ed8", border: "none", color: "#fff", padding: "8px 14px", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" },
-  addForm: { display: "flex", flexDirection: "column", gap: 8, marginTop: 10, padding: 10, background: "#0f172a", borderRadius: 8 },
-  dateInputRow: { display: "flex", gap: 8 },
-  inputLabel: { fontSize: 11, color: "#64748b", marginBottom: 3 },
-  flyerCard: { background: "#1e293b", borderRadius: 12, padding: 14, marginBottom: 10, border: "1px solid" },
-  flyerTop: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 },
-  flyerName: { fontWeight: 700, fontSize: 14, color: "#e2e8f0" },
-  flyerDate: { fontSize: 11, color: "#64748b", marginTop: 2 },
-  activeBadge: { background: "#0c4a6e", color: "#38bdf8", fontSize: 10, padding: "2px 6px", borderRadius: 4, fontWeight: 700 },
-  pastBadge: { background: "#1e293b", color: "#475569", fontSize: 10, padding: "2px 6px", borderRadius: 4 },
-  prepRow: { display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #334155", paddingTop: 8, marginTop: 4 },
-  weekSection: { marginBottom: 12 },
-  weekLabel: { fontSize: 12, fontWeight: 700, color: "#38bdf8", marginBottom: 4 },
-  refTask: { fontSize: 12, color: "#94a3b8", padding: "2px 0" },
-  helpText: { fontSize: 12, color: "#64748b", marginBottom: 10 },
-  backupMsg: { marginTop: 10, textAlign: "center", color: "#10b981", fontSize: 13, fontWeight: 700 },
-  // シフトタブ
-  periodBtn: { background: "#0f172a", border: "1px solid #334155", color: "#94a3b8", padding: "10px 12px", borderRadius: 8, cursor: "pointer", fontSize: 12, textAlign: "left" },
-  periodBtnActive: { border: "1px solid #38bdf8", color: "#e2e8f0", background: "#0c2240" },
-  currentBadge: { background: "#0c4a6e", color: "#38bdf8", fontSize: 9, padding: "1px 5px", borderRadius: 4, marginLeft: 8, fontWeight: 700 },
-  shiftToggle: { border: "none", borderRadius: 5, padding: "3px 0", cursor: "pointer", fontWeight: 600, fontSize: 10, width: "100%", textAlign: "center" },
-  miniBtn: { background: "#334155", border: "none", color: "#94a3b8", fontSize: 11, width: 22, height: 22, borderRadius: 5, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" },
-  miniBtnActive: { background: "#0369a1", color: "#fff", fontWeight: 700 },
-  bulkLabel: { fontSize: 11, color: "#94a3b8" },
-  smallBtn: { background: "#1e40af", border: "none", color: "#bfdbfe", fontSize: 11, padding: "6px 10px", borderRadius: 6, cursor: "pointer" },
-  saveMsg: { background: "#064e3b", border: "1px solid #10b981", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#6ee7b7", marginBottom: 10, textAlign: "center" },
-};
+document.getElementById("prev-btn").addEventListener("click",()=>{
+  viewDate.setDate(viewDate.getDate()-1); render();
+});
+document.getElementById("next-btn").addEventListener("click",()=>{
+  viewDate.setDate(viewDate.getDate()+1); render();
+});
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+document.querySelectorAll(".tab-btn").forEach(b=>{
+  b.addEventListener("click",()=>{
+    currentTab=b.dataset.tab;
+    document.querySelectorAll(".tab-btn").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    document.getElementById("panel-"+currentTab).classList.add("active");
+    render();
+  });
+});
 
-  </script>
+// 1分ごとに再描画（日付変わり目対応）
+setInterval(()=>render(), 60000);
+
+// 初回描画
+render();
+</script>
 </body>
 </html>
